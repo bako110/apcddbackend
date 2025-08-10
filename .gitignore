@@ -2,7 +2,7 @@
 node_modules/
 
 # Dossier uploads (fichiers lourds que tu ne veux pas versionner)
-# uploads/
+uploads/
 
 # Logs
 logs/
