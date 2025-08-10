@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+
+# Uploads / fichiers médias lourds
+uploads/
+media/
+static/uploads/
+
+# Logs
+logs/
+*.log
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Vidéos, archives, gros fichiers binaires
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.exe
+*.dll
+*.iso
+
+# Fichiers temporaires ou caches IDE
+.vscode/
+*.swp
+*.swo
+
+# Environnement
+.env
