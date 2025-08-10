@@ -1,50 +1,45 @@
 const mongoose = require('mongoose');
 
-
-// Modèle Donations
 const donationSchema = new mongoose.Schema({
-    donor: {
-        name: String,
-        email: String,
-        phone: String,
-        isAnonymous: {
-            type: Boolean,
-            default: false
-        }
-    },
-    amount: {
-        type: Number,
-        required: true,
-        min: 0
-    },
-    currency: {
-        type: String,
-        default: 'FCFA'
-    },
-    destination: {
-        type: String,
-        enum: ['general', 'environmental', 'cultural', 'community'],
-        default: 'general'
-    },
-    paymentMethod: {
-        type: String,
-        enum: ['mobile_money', 'bank_transfer', 'cash', 'card'],
-        required: true
-    },
-    transactionId: String,
-    status: {
-        type: String,
-        enum: ['pending', 'completed', 'failed', 'refunded'],
-        default: 'pending'
-    },
-    receiptSent: {
-        type: Boolean,
-        default: false
-    },
-    notes: String
-}, {
-    timestamps: true
+  amount: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  donorName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  donorEmail: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true
+  },
+  donorPhone: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  donationPurpose: {
+    type: String,
+    enum: ['general', 'environment', 'culture', 'education', 'rural'],
+    default: 'general'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['mobile', 'bank', 'cash', 'western'],
+    required: true
+  },
+  anonymous: {
+    type: Boolean,
+    default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-
-exports = mongoose.model('Donation', donationSchema);
+module.exports = mongoose.model('Donation', donationSchema);

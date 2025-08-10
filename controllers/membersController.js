@@ -1,41 +1,96 @@
-exports.getMembers = async (req, res) => {
+const Member = require('../models/Member');
+
+// Créer un nouveau membre
+exports.createMember = async (req, res) => {
   try {
-    const members = [
-      {
-        id: 1,
-        name: "Amadou Barro",
-        email: "amadou.barro@email.com",
-        status: "active"
-      }
-    ];
-    
-    res.status(200).json({
-      status: 'success',
-      data: members
+    const {
+      membershipPlan,
+      fullName,
+      email,
+      phone,
+      city,
+      profession,
+      motivation,
+      termsAgreement
+    } = req.body;
+
+    if (!termsAgreement) {
+      return res.status(400).json({ error: "Vous devez accepter les conditions d'adhésion." });
+    }
+
+    const newMember = new Member({
+      membershipPlan,
+      fullName,
+      email,
+      phone,
+      city,
+      profession,
+      motivation,
+      termsAgreement
     });
-  } catch (err) {
-    res.status(500).json({
-      status: 'error',
-      message: err.message
-    });
+
+    await newMember.save();
+
+    res.status(201).json({ message: "Inscription réussie !", member: newMember });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur." });
   }
 };
 
-exports.updateMemberStatus = async (req, res) => {
+// Récupérer tous les membres
+exports.getAllMembers = async (req, res) => {
   try {
-    const { memberId } = req.params;
-    const { status } = req.body;
-    
-    console.log(`Membre ${memberId} mis à jour avec le statut: ${status}`);
-    
-    res.status(200).json({
-      status: 'success',
-      message: 'Statut du membre mis à jour'
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: 'error',
-      message: err.message
-    });
+    const members = await Member.find().sort({ createdAt: -1 });
+    res.json(members);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+// Récupérer un membre par ID
+exports.getMemberById = async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id);
+    if (!member) {
+      return res.status(404).json({ error: "Membre non trouvé." });
+    }
+    res.json(member);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+// Mettre à jour un membre par ID
+exports.updateMember = async (req, res) => {
+  try {
+    const updateData = req.body;
+    if ('termsAgreement' in updateData && !updateData.termsAgreement) {
+      return res.status(400).json({ error: "Vous devez accepter les conditions d'adhésion." });
+    }
+    const member = await Member.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!member) {
+      return res.status(404).json({ error: "Membre non trouvé." });
+    }
+    res.json({ message: "Membre mis à jour.", member });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+// Supprimer un membre par ID
+exports.deleteMember = async (req, res) => {
+  try {
+    const member = await Member.findByIdAndDelete(req.params.id);
+    if (!member) {
+      return res.status(404).json({ error: "Membre non trouvé." });
+    }
+    res.json({ message: "Membre supprimé." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur." });
   }
 };

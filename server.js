@@ -20,6 +20,8 @@ const galleryRoutes = require('./routes/galleryRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const contentRoutes = require('./routes/contentRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
+const memberRoutes = require('./routes/membersRoutes');
+const donationRoutes = require('./routes/donationsRoutes');
 
 // ==============================
 //      Initialisation Express
@@ -94,6 +96,8 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/partners', partnerRoutes);
+app.use('/api/members', memberRoutes);
+app.use('/api/donations', donationRoutes);
 
 // ==============================
 //      Health check
