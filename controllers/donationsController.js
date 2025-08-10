@@ -1,5 +1,8 @@
 const Donation = require('../models/Donation');
 
+const validPurposes = ["general", "environment", "culture", "education", "rural"];
+const validPaymentMethods = ["mobile", "bank", "cash", "western"];
+
 exports.createDonation = async (req, res) => {
   try {
     const {
@@ -7,44 +10,43 @@ exports.createDonation = async (req, res) => {
       donorName,
       donorEmail,
       donorPhone,
+      donationPurpose = "general",
+      paymentMethod,
+      anonymous = false
+    } = req.body;
+
+    // Vérifications simples
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Montant invalide." });
+    }
+
+    if (!paymentMethod || !validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ error: "Mode de paiement invalide ou requis." });
+    }
+
+    if (!validPurposes.includes(donationPurpose)) {
+      return res.status(400).json({ error: "Destination du don invalide." });
+    }
+
+    if (!anonymous && (!donorName || !donorEmail || !donorPhone)) {
+      return res.status(400).json({ error: "Nom, email et téléphone requis pour un don non anonyme." });
+    }
+
+    const newDonation = new Donation({
+      amount,
+      donorName: anonymous ? null : donorName.trim(),
+      donorEmail: anonymous ? null : donorEmail.trim(),
+      donorPhone: anonymous ? null : donorPhone.trim(),
       donationPurpose,
       paymentMethod,
       anonymous
-    } = req.body;
-
-    // Validation simple
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: "Montant du don invalide." });
-    }
-    if (!donorName && !anonymous) {
-      return res.status(400).json({ error: "Le nom du donateur est requis sauf pour don anonyme." });
-    }
-    if (!donorEmail && !anonymous) {
-      return res.status(400).json({ error: "L'email du donateur est requis sauf pour don anonyme." });
-    }
-    if (!donorPhone && !anonymous) {
-      return res.status(400).json({ error: "Le téléphone du donateur est requis sauf pour don anonyme." });
-    }
-    if (!paymentMethod) {
-      return res.status(400).json({ error: "Le mode de paiement est requis." });
-    }
-
-    // Création donation
-    const newDonation = new Donation({
-      amount,
-      donorName: anonymous ? 'Anonyme' : donorName,
-      donorEmail: anonymous ? '' : donorEmail,
-      donorPhone: anonymous ? '' : donorPhone,
-      donationPurpose,
-      paymentMethod,
-      anonymous: !!anonymous
     });
 
     await newDonation.save();
 
     res.status(201).json({ message: "Merci pour votre don !" });
   } catch (error) {
-    console.error(error);
+    console.error("Erreur serveur :", error);
     res.status(500).json({ error: "Erreur serveur." });
   }
 };
@@ -54,7 +56,7 @@ exports.getDonations = async (req, res) => {
     const donations = await Donation.find().sort({ createdAt: -1 });
     res.json(donations);
   } catch (error) {
-    console.error(error);
+    console.error("Erreur serveur :", error);
     res.status(500).json({ error: "Erreur serveur." });
   }
 };
