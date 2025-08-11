@@ -19,13 +19,16 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Routes CRUD
-router.post('/', upload.single('image'), galleryController.addGalleryItem);
+// Adapter multer à attendre le champ 'media' (au lieu de 'image')
+router.post('/', upload.single('media'), galleryController.addGalleryItem);
 router.get('/', galleryController.getGalleryItems);
 
-// **Ajout de la route GET par ID**
+// Route GET par ID
 router.get('/:id', galleryController.getGalleryItemById);
 
-router.put('/:id', upload.single('image'), galleryController.updateGalleryItem);
+// Même adaptation pour update (PUT)
+router.put('/:id', upload.single('media'), galleryController.updateGalleryItem);
+
 router.delete('/:id', galleryController.deleteGalleryItem);
 
 module.exports = router;

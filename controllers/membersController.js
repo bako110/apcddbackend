@@ -1,4 +1,5 @@
 const Member = require('../models/Member');
+const activitiesController = require('./activitiesController'); // Import du controller d'activités
 
 // Créer un nouveau membre
 exports.createMember = async (req, res) => {
@@ -11,7 +12,8 @@ exports.createMember = async (req, res) => {
       city,
       profession,
       motivation,
-      termsAgreement
+      termsAgreement,
+      status // optionnel : peut venir du front ou par défaut
     } = req.body;
 
     if (!termsAgreement) {
@@ -26,10 +28,23 @@ exports.createMember = async (req, res) => {
       city,
       profession,
       motivation,
-      termsAgreement
+      termsAgreement,
+      status: status || 'pending'  // valeur par défaut
     });
 
     await newMember.save();
+
+    // Log activité
+    try {
+      await activitiesController.logActivity({
+        activity: `Nouvel adhésion membre: ${newMember.fullName}`,
+        type: 'Membres',
+        status: newMember.status.toLowerCase(),
+        referenceId: newMember._id
+      });
+    } catch (err) {
+      console.error('Erreur log activité:', err.message);
+    }
 
     res.status(201).json({ message: "Inscription réussie !", member: newMember });
   } catch (error) {
@@ -74,6 +89,19 @@ exports.updateMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ error: "Membre non trouvé." });
     }
+
+    // Log activité
+    try {
+      await activitiesController.logActivity({
+        activity: `Mise à jour membre: ${member.fullName}`,
+        type: 'Membres',
+        status: member.status.toLowerCase(),
+        referenceId: member._id
+      });
+    } catch (err) {
+      console.error('Erreur log activité:', err.message);
+    }
+
     res.json({ message: "Membre mis à jour.", member });
   } catch (error) {
     console.error(error);
@@ -88,6 +116,19 @@ exports.deleteMember = async (req, res) => {
     if (!member) {
       return res.status(404).json({ error: "Membre non trouvé." });
     }
+
+    // Log activité
+    try {
+      await activitiesController.logActivity({
+        activity: `Suppression membre: ${member.fullName}`,
+        type: 'Membres',
+        status: 'supprimé',
+        referenceId: member._id
+      });
+    } catch (err) {
+      console.error('Erreur log activité:', err.message);
+    }
+
     res.json({ message: "Membre supprimé." });
   } catch (error) {
     console.error(error);

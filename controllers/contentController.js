@@ -50,3 +50,20 @@ exports.updateStats = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// controllers/contentController.js
+
+exports.getState = (req, res) => {
+  const content = {
+    _id: "6897e990dcb05236dafe50b8",
+    stats: {
+      activeMembers: 1200,
+      projectsDone: 75,
+      treesPlanted: 50000,
+      villagesTouched: 79
+    },
+    __v: 0
+  };
+
+  res.json(content);
+};

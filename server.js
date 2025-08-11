@@ -22,6 +22,8 @@ const contentRoutes = require('./routes/contentRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
 const memberRoutes = require('./routes/membersRoutes');
 const donationRoutes = require('./routes/donationsRoutes');
+const dashboardStatsRoute = require('./routes/dashboardStatsRoute');
+const activitiesRoutes = require('./routes/activitiesRoutes');
 
 // ==============================
 //      Initialisation Express
@@ -98,6 +100,8 @@ app.use('/api/content', contentRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/donations', donationRoutes);
+app.use('/api/dashboard-stats', dashboardStatsRoute);
+app.use('/api/activities', activitiesRoutes);
 
 // ==============================
 //      Health check

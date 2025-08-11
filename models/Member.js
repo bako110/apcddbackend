@@ -6,6 +6,12 @@ const memberSchema = new mongoose.Schema({
     required: true,
     enum: ['sympathisant', 'actif', 'bienfaiteur']
   },
+  status: {
+    type: String,
+    required: true,
+    enum: ['active', 'pending', 'inactive'], // tu peux adapter les valeurs
+    default: 'pending' // valeur par défaut si tu veux
+  },
   fullName: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String, required: true },
