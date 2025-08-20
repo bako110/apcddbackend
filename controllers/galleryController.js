@@ -1,8 +1,23 @@
 const GalleryItem = require('../models/Gallery');
-const cloudinary = require('../cloudinaryConfig');
+import cloudinary from '../cloudinaryConfig.js';
+import streamifier from 'streamifier';
 
-// Ajouter un élément à la galerie (image/vidéo)
-exports.addGalleryItem = async (req, res) => {
+// Fonction utilitaire pour uploader sur Cloudinary depuis buffer
+const uploadToCloudinary = (buffer, folder = 'gallery') => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
+
+// Ajouter un élément à la galerie
+export const addGalleryItem = async (req, res) => {
   try {
     const { title, category, description } = req.body;
 
@@ -10,12 +25,15 @@ exports.addGalleryItem = async (req, res) => {
       return res.status(400).json({ error: 'Fichier requis' });
     }
 
-    // L'URL Cloudinary est déjà ajoutée par le router dans req.body.image/media
+    // Upload sur Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer);
+
     const newItem = new GalleryItem({
       title,
       category,
       description,
-      imageUrl: req.body.media || req.body.image, // récupère l'URL Cloudinary
+      imageUrl: result.secure_url,
+      public_id: result.public_id
     });
 
     await newItem.save();
@@ -27,19 +45,8 @@ exports.addGalleryItem = async (req, res) => {
   }
 };
 
-// Récupérer tous les éléments de la galerie
-exports.getGalleryItems = async (req, res) => {
-  try {
-    const items = await GalleryItem.find().sort({ createdAt: -1 });
-    res.json(items);
-  } catch (error) {
-    console.error('Erreur récupération galerie:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des fichiers' });
-  }
-};
-
-// Mettre à jour un élément de la galerie
-exports.updateGalleryItem = async (req, res) => {
+// Mettre à jour un élément
+export const updateGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, category, description } = req.body;
@@ -49,12 +56,10 @@ exports.updateGalleryItem = async (req, res) => {
 
     // Remplacer l'image si un nouveau fichier est uploadé
     if (req.file) {
-      // Supprimer l'ancien fichier Cloudinary si tu stockes public_id
-      if (item.public_id) {
-        await cloudinary.uploader.destroy(item.public_id);
-      }
-      item.imageUrl = req.body.media || req.body.image;
-      item.public_id = req.body.public_id; // à ajouter lors de l'upload si nécessaire
+      if (item.public_id) await cloudinary.uploader.destroy(item.public_id);
+      const result = await uploadToCloudinary(req.file.buffer);
+      item.imageUrl = result.secure_url;
+      item.public_id = result.public_id;
     }
 
     item.title = title ?? item.title;
@@ -70,18 +75,14 @@ exports.updateGalleryItem = async (req, res) => {
   }
 };
 
-// Supprimer un élément de la galerie
-exports.deleteGalleryItem = async (req, res) => {
+// Supprimer un élément
+export const deleteGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
     const item = await GalleryItem.findById(id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
 
-    // Supprimer le fichier sur Cloudinary si tu stockes public_id
-    if (item.public_id) {
-      await cloudinary.uploader.destroy(item.public_id);
-    }
-
+    if (item.public_id) await cloudinary.uploader.destroy(item.public_id);
     await GalleryItem.findByIdAndDelete(id);
 
     res.json({ message: 'Fichier supprimé' });
@@ -91,8 +92,19 @@ exports.deleteGalleryItem = async (req, res) => {
   }
 };
 
-// Récupérer un élément de la galerie par ID
-exports.getGalleryItemById = async (req, res) => {
+// Récupérer tous les éléments
+export const getGalleryItems = async (req, res) => {
+  try {
+    const items = await GalleryItem.find().sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    console.error('Erreur récupération galerie:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des fichiers' });
+  }
+};
+
+// Récupérer un élément par ID
+export const getGalleryItemById = async (req, res) => {
   try {
     const item = await GalleryItem.findById(req.params.id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
