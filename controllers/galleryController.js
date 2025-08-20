@@ -1,6 +1,5 @@
 const GalleryItem = require('../models/Gallery');
-const fs = require('fs');
-const path = require('path');
+const cloudinary = require('../cloudinaryConfig');
 
 // Ajouter un élément à la galerie (image/vidéo)
 exports.addGalleryItem = async (req, res) => {
@@ -11,11 +10,12 @@ exports.addGalleryItem = async (req, res) => {
       return res.status(400).json({ error: 'Fichier requis' });
     }
 
+    // L'URL Cloudinary est déjà ajoutée par le router dans req.body.image/media
     const newItem = new GalleryItem({
       title,
       category,
       description,
-      imageUrl: `/uploads/${req.file.filename}`,  // le chemin relatif pour l'accès public
+      imageUrl: req.body.media || req.body.image, // récupère l'URL Cloudinary
     });
 
     await newItem.save();
@@ -47,13 +47,14 @@ exports.updateGalleryItem = async (req, res) => {
     const item = await GalleryItem.findById(id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
 
-    // Supprimer l'ancien fichier du serveur si un nouveau est uploadé
+    // Remplacer l'image si un nouveau fichier est uploadé
     if (req.file) {
-      const oldPath = path.join(__dirname, '..', 'uploads', path.basename(item.imageUrl));
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
+      // Supprimer l'ancien fichier Cloudinary si tu stockes public_id
+      if (item.public_id) {
+        await cloudinary.uploader.destroy(item.public_id);
       }
-      item.imageUrl = `/uploads/${req.file.filename}`;
+      item.imageUrl = req.body.media || req.body.image;
+      item.public_id = req.body.public_id; // à ajouter lors de l'upload si nécessaire
     }
 
     item.title = title ?? item.title;
@@ -76,9 +77,9 @@ exports.deleteGalleryItem = async (req, res) => {
     const item = await GalleryItem.findById(id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
 
-    const filePath = path.join(__dirname, '..', 'uploads', path.basename(item.imageUrl));
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Supprimer le fichier sur Cloudinary si tu stockes public_id
+    if (item.public_id) {
+      await cloudinary.uploader.destroy(item.public_id);
     }
 
     await GalleryItem.findByIdAndDelete(id);

@@ -6,11 +6,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-const path = require('path');
-const fs = require('fs');
-
 require('dotenv').config();
 const connectDB = require('./config/db');
+const cloudinary = require('./cloudinaryConfig'); // config Cloudinary
 
 // ==============================
 //      Import des routes
@@ -38,15 +36,8 @@ connectDB();
 // ==============================
 //      Middleware de sécurité & CORS
 // ==============================
-// Autoriser toutes les origines (pour dev)
-// Et désactiver Cross-Origin-Resource-Policy dans helmet pour éviter blocage des images
-app.use(cors({
-  origin: '*',
-}));
-
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-}));
+app.use(cors({ origin: '*' }));
+app.use(helmet({ crossOriginResourcePolicy: true }));
 
 // ==============================
 //      Limitation de requêtes
@@ -68,30 +59,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==============================
-//      Création automatique du dossier uploads s'il n'existe pas
-// ==============================
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('Dossier uploads créé automatiquement.');
-}
-
-// ==============================
-//      Autoriser CORS sur fichiers statiques (uploads) + CORP header
-// ==============================
-app.use('/uploads', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-});
-
-// ==============================
-//      Servir fichiers statiques (uploads)
-// ==============================
-app.use('/uploads', express.static(uploadsDir));
-
-// ==============================
-//      Routes Events & Gallery
+//      Routes
 // ==============================
 app.use('/api/events', eventRoutes);
 app.use('/api/gallery', galleryRoutes);

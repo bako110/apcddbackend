@@ -1,6 +1,5 @@
 const Partner = require('../models/Partner');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('../cloudinaryConfig');
 
 // Liste tous les partenaires
 exports.getPartners = async (req, res) => {
@@ -26,16 +25,15 @@ exports.getPartnerById = async (req, res) => {
 // Ajouter un partenaire
 exports.addPartner = async (req, res) => {
   try {
-    console.log('req.file:', req.file); // Pour debug upload fichier
-
     const { name, type, website, description } = req.body;
-    let logoUrl = null;
-
-    if (req.file) {
-      logoUrl = `/uploads/${req.file.filename}`;
-    }
-
-    const partner = new Partner({ name, type, website, description, logoUrl });
+    const partner = new Partner({
+      name,
+      type,
+      website,
+      description,
+      logoUrl: req.body.logo || req.body.media, // URL Cloudinary
+      public_id: req.body.public_id || null,    // stocker public_id si nécessaire
+    });
     await partner.save();
 
     res.status(201).json({ message: 'Partenaire ajouté avec succès', partner });
@@ -53,11 +51,11 @@ exports.updatePartner = async (req, res) => {
     const partner = await Partner.findById(id);
     if (!partner) return res.status(404).json({ error: 'Partenaire non trouvé' });
 
-    // Supprimer ancien logo si nouveau upload
-    if (req.file && partner.logoUrl) {
-      const oldPath = path.join(__dirname, '..', partner.logoUrl);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      partner.logoUrl = `/uploads/${req.file.filename}`;
+    // Supprimer l'ancien logo Cloudinary si nouveau upload
+    if (req.file && partner.public_id) {
+      await cloudinary.uploader.destroy(partner.public_id);
+      partner.logoUrl = req.body.logo || req.body.media;
+      partner.public_id = req.body.public_id || null;
     }
 
     partner.name = name || partner.name;
@@ -79,10 +77,9 @@ exports.deletePartner = async (req, res) => {
     const partner = await Partner.findById(id);
     if (!partner) return res.status(404).json({ error: 'Partenaire non trouvé' });
 
-    // Supprimer le fichier logo
-    if (partner.logoUrl) {
-      const logoPath = path.join(__dirname, '..', partner.logoUrl);
-      if (fs.existsSync(logoPath)) fs.unlinkSync(logoPath);
+    // Supprimer le logo sur Cloudinary si public_id
+    if (partner.public_id) {
+      await cloudinary.uploader.destroy(partner.public_id);
     }
 
     await Partner.deleteOne({ _id: id });

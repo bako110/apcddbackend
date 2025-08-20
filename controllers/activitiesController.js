@@ -103,17 +103,17 @@ exports.createActivity = async (req, res) => {
       return res.status(400).json({ error: 'Statut d\'activité invalide' });
     }
 
-    const newActivity = new Activity({
-      activity,
-      type,
-      status,
-      referenceId,
-      metadata,
-      date: new Date()
-    });
+    // const newActivity = new Activity({
+    //   activity,
+    //   type,
+    //   status,
+    //   referenceId,
+    //   metadata,
+    //   date: new Date()
+    // });
 
-    await newActivity.save();
-    res.status(201).json(newActivity);
+    // await newActivity.save();
+    // res.status(201).json(newActivity);
   } catch (error) {
     console.error('Erreur createActivity:', error.message);
     res.status(500).json({ error: 'Erreur serveur lors de la création de l\'activité.' });

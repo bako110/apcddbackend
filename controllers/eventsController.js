@@ -1,13 +1,15 @@
 const Event = require('../models/Event');
-const activitiesController = require('./activitiesController'); // Import pour log activités
+const activitiesController = require('./activitiesController'); // Log activités
+const cloudinary = require('../cloudinaryConfig');
 
 // 📌 Créer un événement
 exports.createEvent = async (req, res) => {
     try {
         const { title, date, location, description, status } = req.body;
-        const image = req.file ? req.file.filename : null;
+        let imageUrl = req.body.image || req.body.media || null;
+        let public_id = req.body.public_id || null;
 
-        const event = new Event({ title, date, location, description, status, image });
+        const event = new Event({ title, date, location, description, status, image: imageUrl, public_id });
         await event.save();
 
         // Log activité
@@ -42,28 +44,32 @@ exports.getEvents = async (req, res) => {
 
 // 📌 Récupérer un événement par ID
 exports.getEventById = async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (!event) {
-      return res.status(404).json({ error: 'Événement non trouvé' });
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+        res.json(event);
+    } catch (err) {
+        console.error('Erreur récupération événement:', err);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
-    res.json(event);
-  } catch (error) {
-    console.error('Erreur lors de la récupération de l\'événement:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
 };
 
 // 📌 Mettre à jour un événement
 exports.updateEvent = async (req, res) => {
     try {
         const updateData = req.body;
-        if (req.file) updateData.image = req.file.filename;
+
+        // Supprimer l'ancien média Cloudinary si nouveau upload
+        if (req.file && updateData.public_id && updateData.old_public_id) {
+            try {
+                await cloudinary.uploader.destroy(updateData.old_public_id);
+            } catch (err) {
+                console.error('Erreur suppression ancien média Cloudinary:', err.message);
+            }
+        }
 
         const updatedEvent = await Event.findByIdAndUpdate(req.params.id, updateData, { new: true });
-        if (!updatedEvent) {
-          return res.status(404).json({ error: 'Événement non trouvé' });
-        }
+        if (!updatedEvent) return res.status(404).json({ error: 'Événement non trouvé' });
 
         // Log activité
         try {
@@ -87,18 +93,27 @@ exports.updateEvent = async (req, res) => {
 // 📌 Supprimer un événement
 exports.deleteEvent = async (req, res) => {
     try {
-        const deletedEvent = await Event.findByIdAndDelete(req.params.id);
-        if (!deletedEvent) {
-          return res.status(404).json({ error: 'Événement non trouvé' });
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+
+        // Supprimer l'image Cloudinary si public_id
+        if (event.public_id) {
+            try {
+                await cloudinary.uploader.destroy(event.public_id);
+            } catch (err) {
+                console.error('Erreur suppression média Cloudinary:', err.message);
+            }
         }
+
+        await Event.deleteOne({ _id: event._id });
 
         // Log activité
         try {
             await activitiesController.logActivity({
-                activity: `Suppression événement: ${deletedEvent.title}`,
+                activity: `Suppression événement: ${event.title}`,
                 type: 'Événement',
                 status: 'supprimé',
-                referenceId: deletedEvent._id
+                referenceId: event._id
             });
         } catch (err) {
             console.error('Erreur log activité:', err.message);

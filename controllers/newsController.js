@@ -1,17 +1,5 @@
 const News = require('../models/News');
-const path = require('path');
-const fs = require('fs');
-
-// Fonction utilitaire pour supprimer un fichier de manière sécurisée
-const deleteFileSafe = (filePath) => {
-    try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-    } catch (err) {
-        console.error(`Erreur suppression fichier : ${err.message}`);
-    }
-};
+const cloudinary = require('../cloudinaryConfig');
 
 // Ajouter une actualité
 exports.addNews = async (req, res) => {
@@ -20,19 +8,7 @@ exports.addNews = async (req, res) => {
 
         // Validation minimale
         if (!title || !date || !category || !summary || !content) {
-            if (req.file) deleteFileSafe(path.join(__dirname, '..', 'uploads', req.file.filename));
             return res.status(400).json({ message: "Champs obligatoires manquants" });
-        }
-
-        let imagePath = null;
-        if (req.file) {
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-            if (!allowedExts.includes(ext)) {
-                deleteFileSafe(path.join(__dirname, '..', 'uploads', req.file.filename));
-                return res.status(400).json({ message: "Format d'image non supporté" });
-            }
-            imagePath = `/uploads/${req.file.filename}`;
         }
 
         const news = new News({
@@ -42,7 +18,8 @@ exports.addNews = async (req, res) => {
             summary,
             content,
             featured: featured === 'true' || featured === true,
-            image: imagePath
+            image: req.body.image || req.body.media, // URL Cloudinary
+            public_id: req.body.public_id || null, // stocker public_id si tu veux supprimer plus tard
         });
 
         await news.save();
@@ -50,7 +27,6 @@ exports.addNews = async (req, res) => {
 
     } catch (err) {
         console.error("Erreur addNews :", err);
-        if (req.file) deleteFileSafe(path.join(__dirname, '..', 'uploads', req.file.filename));
         return res.status(500).json({ message: "Erreur serveur lors de l'ajout" });
     }
 };
@@ -70,9 +46,7 @@ exports.getAllNews = async (req, res) => {
 exports.getNewsById = async (req, res) => {
     try {
         const news = await News.findById(req.params.id);
-        if (!news) {
-            return res.status(404).json({ message: "Actualité introuvable" });
-        }
+        if (!news) return res.status(404).json({ message: "Actualité introuvable" });
         return res.status(200).json(news);
     } catch (err) {
         console.error("Erreur getNewsById :", err);
@@ -84,25 +58,15 @@ exports.getNewsById = async (req, res) => {
 exports.updateNews = async (req, res) => {
     try {
         const news = await News.findById(req.params.id);
-        if (!news) {
-            if (req.file) deleteFileSafe(path.join(__dirname, '..', 'uploads', req.file.filename));
-            return res.status(404).json({ message: "Actualité introuvable" });
+        if (!news) return res.status(404).json({ message: "Actualité introuvable" });
+
+        // Supprimer l'ancien fichier Cloudinary si nouveau upload
+        if (req.file && news.public_id) {
+            await cloudinary.uploader.destroy(news.public_id);
+            news.image = req.body.image || req.body.media;
+            news.public_id = req.body.public_id || null;
         }
 
-        if (req.file) {
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-            if (!allowedExts.includes(ext)) {
-                deleteFileSafe(path.join(__dirname, '..', 'uploads', req.file.filename));
-                return res.status(400).json({ message: "Format d'image non supporté" });
-            }
-            if (news.image) {
-                deleteFileSafe(path.join(__dirname, '..', news.image));
-            }
-            req.body.image = `/uploads/${req.file.filename}`;
-        }
-
-        // Force la conversion explicite de featured en booléen
         if ('featured' in req.body) {
             req.body.featured = req.body.featured === 'true' || req.body.featured === true;
         }
@@ -121,12 +85,11 @@ exports.updateNews = async (req, res) => {
 exports.deleteNews = async (req, res) => {
     try {
         const news = await News.findById(req.params.id);
-        if (!news) {
-            return res.status(404).json({ message: "Actualité introuvable" });
-        }
+        if (!news) return res.status(404).json({ message: "Actualité introuvable" });
 
-        if (news.image) {
-            deleteFileSafe(path.join(__dirname, '..', news.image));
+        // Supprimer l'image sur Cloudinary
+        if (news.public_id) {
+            await cloudinary.uploader.destroy(news.public_id);
         }
 
         await news.deleteOne();
