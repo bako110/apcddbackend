@@ -25,7 +25,6 @@ exports.addGalleryItem = async (req, res) => {
       return res.status(400).json({ error: 'Fichier requis' });
     }
 
-    // Upload sur Cloudinary
     const result = await uploadToCloudinary(req.file.buffer);
 
     const newItem = new GalleryItem({
@@ -54,7 +53,6 @@ exports.updateGalleryItem = async (req, res) => {
     const item = await GalleryItem.findById(id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
 
-    // Remplacer l'image si un nouveau fichier est uploadé
     if (req.file) {
       if (item.public_id) await cloudinary.uploader.destroy(item.public_id);
       const result = await uploadToCloudinary(req.file.buffer);
@@ -75,7 +73,7 @@ exports.updateGalleryItem = async (req, res) => {
   }
 };
 
-// Supprimer un élément de la galerie
+// Supprimer un élément
 exports.deleteGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,7 +90,7 @@ exports.deleteGalleryItem = async (req, res) => {
   }
 };
 
-// Récupérer tous les éléments de la galerie
+// Récupérer tous les éléments
 exports.getGalleryItems = async (req, res) => {
   try {
     const items = await GalleryItem.find().sort({ createdAt: -1 });
@@ -103,7 +101,7 @@ exports.getGalleryItems = async (req, res) => {
   }
 };
 
-// Récupérer un élément de la galerie par ID
+// Récupérer un élément par ID
 exports.getGalleryItemById = async (req, res) => {
   try {
     const item = await GalleryItem.findById(req.params.id);
