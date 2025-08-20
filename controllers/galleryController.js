@@ -1,6 +1,6 @@
 const GalleryItem = require('../models/Gallery');
-import cloudinary from '../cloudinaryConfig.js';
-import streamifier from 'streamifier';
+const cloudinary = require('../cloudinaryConfig');
+const streamifier = require('streamifier');
 
 // Fonction utilitaire pour uploader sur Cloudinary depuis buffer
 const uploadToCloudinary = (buffer, folder = 'gallery') => {
@@ -17,7 +17,7 @@ const uploadToCloudinary = (buffer, folder = 'gallery') => {
 };
 
 // Ajouter un élément à la galerie
-export const addGalleryItem = async (req, res) => {
+exports.addGalleryItem = async (req, res) => {
   try {
     const { title, category, description } = req.body;
 
@@ -45,8 +45,8 @@ export const addGalleryItem = async (req, res) => {
   }
 };
 
-// Mettre à jour un élément
-export const updateGalleryItem = async (req, res) => {
+// Mettre à jour un élément de la galerie
+exports.updateGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, category, description } = req.body;
@@ -75,8 +75,8 @@ export const updateGalleryItem = async (req, res) => {
   }
 };
 
-// Supprimer un élément
-export const deleteGalleryItem = async (req, res) => {
+// Supprimer un élément de la galerie
+exports.deleteGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
     const item = await GalleryItem.findById(id);
@@ -92,8 +92,8 @@ export const deleteGalleryItem = async (req, res) => {
   }
 };
 
-// Récupérer tous les éléments
-export const getGalleryItems = async (req, res) => {
+// Récupérer tous les éléments de la galerie
+exports.getGalleryItems = async (req, res) => {
   try {
     const items = await GalleryItem.find().sort({ createdAt: -1 });
     res.json(items);
@@ -103,8 +103,8 @@ export const getGalleryItems = async (req, res) => {
   }
 };
 
-// Récupérer un élément par ID
-export const getGalleryItemById = async (req, res) => {
+// Récupérer un élément de la galerie par ID
+exports.getGalleryItemById = async (req, res) => {
   try {
     const item = await GalleryItem.findById(req.params.id);
     if (!item) return res.status(404).json({ error: 'Fichier non trouvé' });
