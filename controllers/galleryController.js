@@ -1,6 +1,6 @@
-const GalleryItem = require('../models/Gallery');
-const cloudinary = require('../cloudinaryConfig');
-const streamifier = require('streamifier');
+import GalleryItem from '../models/Gallery.js';
+import cloudinary from '../cloudinaryConfig.js';
+import streamifier from 'streamifier';
 
 // Fonction utilitaire pour uploader sur Cloudinary depuis buffer
 const uploadToCloudinary = (buffer, folder = 'gallery') => {
@@ -17,7 +17,7 @@ const uploadToCloudinary = (buffer, folder = 'gallery') => {
 };
 
 // Ajouter un élément à la galerie
-exports.addGalleryItem = async (req, res) => {
+export const addGalleryItem = async (req, res) => {
   try {
     const { title, category, description } = req.body;
 
@@ -44,6 +44,7 @@ exports.addGalleryItem = async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de l\'ajout à la galerie' });
   }
 };
+
 
 // Mettre à jour un élément de la galerie
 exports.updateGalleryItem = async (req, res) => {
