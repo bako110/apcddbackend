@@ -9,6 +9,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const cloudinary = require('./cloudinaryConfig'); // config Cloudinary
+const path = require('path');
 
 // ==============================
 //      Import des routes
@@ -23,20 +24,17 @@ const donationRoutes = require('./routes/donationsRoutes');
 const dashboardStatsRoute = require('./routes/dashboardStatsRoute');
 const activitiesRoutes = require('./routes/activitiesRoutes');
 const authRoutes = require('./routes/authRoutes');
+const settingsRoutes = require('./routes/settingsRoutes'); 
 
 // ==============================
 //      Initialisation Express
 // ==============================
 const app = express();
 
-
-
 // ==============================
 //      Faire confiance au proxy (Render, Nginx, etc.)
 // ==============================
 app.set('trust proxy', 1); // 1 = faire confiance au premier proxy
-
-
 
 // ==============================
 //      Connexion à la base de données
@@ -57,7 +55,6 @@ app.use('/api/', rateLimit({
   max: 100,
 }));
 
-
 // ==============================
 //      Logs HTTP
 // ==============================
@@ -68,6 +65,11 @@ app.use(morgan('combined'));
 // ==============================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ==============================
+//      Fichiers statiques (uploads)
+// ==============================
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ==============================
 //      Routes
@@ -82,6 +84,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/dashboard-stats', dashboardStatsRoute);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api', authRoutes);
+app.use('/api', settingsRoutes); // <-- settings routes
 
 // ==============================
 //      Health check
