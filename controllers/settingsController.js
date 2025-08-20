@@ -1,6 +1,6 @@
 // controllers/settingsController.js
 const Settings = require('../models/Settings');
-const Admin = require('../models/admin');
+const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const cloudinary = require('../cloudinaryConfig');
 const streamifier = require('streamifier');
