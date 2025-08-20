@@ -28,6 +28,15 @@ const activitiesRoutes = require('./routes/activitiesRoutes');
 // ==============================
 const app = express();
 
+
+
+// ==============================
+//      Faire confiance au proxy (Render, Nginx, etc.)
+// ==============================
+app.set('trust proxy', 1); // 1 = faire confiance au premier proxy
+
+
+
 // ==============================
 //      Connexion à la base de données
 // ==============================
@@ -46,6 +55,7 @@ app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
 }));
+
 
 // ==============================
 //      Logs HTTP
