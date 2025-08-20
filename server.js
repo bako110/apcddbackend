@@ -22,6 +22,7 @@ const memberRoutes = require('./routes/membersRoutes');
 const donationRoutes = require('./routes/donationsRoutes');
 const dashboardStatsRoute = require('./routes/dashboardStatsRoute');
 const activitiesRoutes = require('./routes/activitiesRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // ==============================
 //      Initialisation Express
@@ -80,6 +81,7 @@ app.use('/api/members', memberRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/dashboard-stats', dashboardStatsRoute);
 app.use('/api/activities', activitiesRoutes);
+app.use('/api', authRoutes);
 
 // ==============================
 //      Health check
